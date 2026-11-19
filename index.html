@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>字数统计 · 中文 / 英文 / 符号</title>
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --bg-soft: #eef2f9;
+    --card: #ffffff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --faint: #94a3b8;
+    --line: #e3e9f2;
+    --blue: #2563eb;
+    --red: #dc2626;
+    --radius: 16px;
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, .05);
+    --shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 12px 32px rgba(15, 23, 42, .06);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0a101d;
+      --bg-soft: #0f1728;
+      --card: #111a2b;
+      --text: #e8eefb;
+      --muted: #94a3b8;
+      --faint: #64748b;
+      --line: #1e2a41;
+      --blue: #60a5fa;
+      --red: #f87171;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, .2);
+      --shadow: 0 1px 2px rgba(0, 0, 0, .2), 0 14px 38px rgba(0, 0, 0, .28);
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Segoe UI", system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(1100px 460px at 8% -8%, rgba(37, 99, 235, .12), transparent 60%),
+      radial-gradient(900px 420px at 100% -4%, rgba(124, 58, 237, .10), transparent 58%),
+      var(--bg);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body {
+      background:
+        radial-gradient(1100px 460px at 8% -8%, rgba(37, 99, 235, .14), transparent 62%),
+        radial-gradient(900px 420px at 100% -4%, rgba(124, 58, 237, .12), transparent 60%),
+        var(--bg);
+    }
+  }
+
+  button, input, textarea { font-family: inherit; }
+
+  .page {
+    width: min(1280px, 100%);
+    margin: 0 auto;
+    padding: 26px 24px 30px;
+  }
+
+  /* ---------- 顶栏 ---------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+
+  .brand { display: flex; align-items: center; gap: 12px; }
+
+  .logo {
+    width: 42px;
+    height: 42px;
+    border-radius: 13px;
+    display: grid;
+    place-items: center;
+    flex: none;
+    font-size: 21px;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, #3b82f6, #6d28d9);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, .30);
+  }
+
+  .brand h1 { margin: 0; font-size: 19px; letter-spacing: .01em; }
+  .brand p { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--card);
+    box-shadow: var(--shadow-sm);
+    color: var(--muted);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .badge i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, .15);
+  }
+
+  /* ---------- 核心数字 ---------- */
+  .hero {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .stat-card {
+    position: relative;
+    padding: 16px 18px 15px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--card);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .stat-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 12.5px;
+    font-weight: 500;
+  }
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--c, var(--blue));
+    flex: none;
+  }
+
+  .stat-value {
+    margin-top: 8px;
+    font-size: clamp(27px, 3.1vw, 35px);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat-sub {
+    margin-top: 5px;
+    color: var(--muted);
+    font-size: 11.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ---------- 主体 ---------- */
+  .main {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(340px, .9fr);
+    gap: 16px;
+    align-items: start;
+  }
+
+  .main > * { min-width: 0; }
+
+  .panel {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--card);
+    box-shadow: var(--shadow);
+  }
+
+  .panel-title { font-size: 13px; font-weight: 600; letter-spacing: .01em; }
+
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 11px;
+  }
+
+  /* ---------- 输入区 ---------- */
+  .editor {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .editor-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .editor-meta {
+    color: var(--muted);
+    font-size: 11.5px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  textarea {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 430px;
+    padding: 16px 18px;
+    border: 0;
+    outline: 0;
+    resize: vertical;
+    background: transparent;
+    color: var(--text);
+    caret-color: var(--blue);
+    font-size: 15px;
+    line-height: 1.85;
+    letter-spacing: .01em;
+  }
+
+  textarea::placeholder { color: var(--faint); opacity: .8; }
+
+  .editor:focus-within {
+    border-color: rgba(37, 99, 235, .45);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, .09), var(--shadow);
+  }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 12px 14px;
+    border-top: 1px solid var(--line);
+    background: linear-gradient(180deg, transparent, rgba(148, 163, 184, .045));
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 36px;
+    padding: 0 13px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color .15s, border-color .15s, transform .05s, box-shadow .15s;
+  }
+
+  .btn:hover { background: var(--bg-soft); }
+  .btn:active { transform: translateY(1px); }
+  .btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+  .btn svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex: none;
+  }
+
+  .btn.primary {
+    border-color: transparent;
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(37, 99, 235, .24);
+  }
+
+  .btn.primary:hover { filter: brightness(1.06); }
+
+  .btn.danger { color: var(--red); }
+  .btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
+  .btn.ghost:hover { background: var(--bg-soft); color: var(--text); }
+
+  .hint {
+    margin-left: auto;
+    color: var(--faint);
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  kbd {
+    display: inline-block;
+    padding: 1px 5px;
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    background: var(--card);
+    color: var(--muted);
+    font: 10.5px/1.5 ui-monospace, "Cascadia Code", Consolas, monospace;
+  }
+
+  /* ---------- 右侧 ---------- */
+  .side {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
+  }
+
+  .side .panel { padding: 15px 16px; min-width: 0; }
+
+  .limit-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .target {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 11.5px;
+    white-space: nowrap;
+  }
+
+  .target input {
+    width: 84px;
+    height: 30px;
+    padding: 0 8px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    outline: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 12.5px;
+    font-weight: 600;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .target input:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+  }
+
+  .bar {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--bg-soft);
+    overflow: hidden;
+  }
+
+  .bar i {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #3b82f6, #6366f1);
+    transition: width .25s ease, background .2s ease;
+  }
+
+  .bar.warn i { background: linear-gradient(90deg, #f59e0b, #f97316); }
+  .bar.over i { background: linear-gradient(90deg, #ef4444, #dc2626); }
+
+  .limit-meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 9px;
+    color: var(--muted);
+    font-size: 11.5px;
+  }
+
+  .limit-meta b {
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* ---------- 环形图 ---------- */
+  .donut-wrap { display: flex; align-items: center; gap: 16px; }
+
+  .donut {
+    position: relative;
+    width: 126px;
+    height: 126px;
+    border-radius: 50%;
+    flex: none;
+    background: var(--bg-soft);
+  }
+
+  .donut-hole {
+    position: absolute;
+    inset: 17px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--card);
+  }
+
+  .donut-hole b {
+    max-width: 88px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 17px;
+    letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .donut-hole small { margin-top: 1px; color: var(--muted); font-size: 10px; }
+
+  .legend {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .legend .row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--muted);
+    font-size: 11.5px;
+  }
+
+  .legend .row i {
+    width: 7px;
+    height: 7px;
+    border-radius: 2px;
+    flex: none;
+  }
+
+  .legend .row b {
+    margin-left: auto;
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- 明细 ---------- */
+  .mini-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .mini {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 9px;
+    background: var(--bg-soft);
+  }
+
+  .mini span { color: var(--muted); font-size: 11.5px; white-space: nowrap; }
+
+  .mini b {
+    font-size: 13.5px;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- 页脚与提示 ---------- */
+  .foot {
+    margin-top: 18px;
+    color: var(--faint);
+    font-size: 11.5px;
+    line-height: 1.7;
+    text-align: center;
+  }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 26px;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: calc(100vw - 32px);
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: #0f172a;
+    color: #f8fafc;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, .28);
+    font-size: 13px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, 18px);
+    transition: opacity .2s ease, transform .2s ease;
+  }
+
+  .toast.show { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
+
+  .toast button {
+    flex: none;
+    padding: 5px 10px;
+    border: 0;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .16);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .toast button:hover { background: rgba(255, 255, 255, .26); }
+
+  /* ---------- 响应式 ---------- */
+  @media (max-width: 1080px) {
+    .main { grid-template-columns: minmax(0, 1fr); }
+    .side {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: stretch;
+    }
+    .side .panel:first-child { grid-column: 1 / -1; }
+    textarea { min-height: 350px; }
+  }
+
+  @media (max-width: 720px) {
+    .page { padding: 18px 14px 24px; }
+    .topbar { margin-bottom: 18px; }
+    .badge { display: none; }
+    .hero { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .stat-card { padding: 14px 14px 13px; }
+    .stat-value { font-size: 28px; }
+    .stat-sub { font-size: 11px; }
+    .side { grid-template-columns: minmax(0, 1fr); }
+    .side .panel:first-child { grid-column: auto; }
+    textarea { min-height: 300px; padding: 14px; font-size: 14.5px; }
+    .hint { display: none; }
+    .donut-wrap { justify-content: center; }
+  }
+
+  @media (max-width: 380px) {
+    .hero { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">字</div>
+      <div>
+        <h1>字数统计</h1>
+        <p>中文 · 英文 · 符号 · 实时统计</p>
+      </div>
+    </div>
+    <div class="badge"><i aria-hidden="true"></i>纯本地运行 · 文本不上传</div>
+  </header>
+
+  <section class="hero" aria-label="核心统计">
+    <div class="stat-card">
+      <div class="stat-label" title="汉字数量，不含标点"><i class="dot" style="--c:#3b82f6"></i>中文字数</div>
+      <div class="stat-value" id="cn">0</div>
+      <div class="stat-sub">汉字，不含标点</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label" title="中文标点、西文标点和其他特殊符号的总数"><i class="dot" style="--c:#f59e0b"></i>符号数量</div>
+      <div class="stat-value" id="sym">0</div>
+      <div class="stat-sub">标点与特殊符号</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label" title="包含空格和换行在内的全部字符"><i class="dot" style="--c:#0ea5e9"></i>总字符数</div>
+      <div class="stat-value" id="chars">0</div>
+      <div class="stat-sub" id="charsSub">含空白与换行</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label" title="中文按字、英文按词、数字按串统计，不含标点和空白"><i class="dot" style="--c:#10b981"></i>计字数</div>
+      <div class="stat-value" id="count">0</div>
+      <div class="stat-sub">中文按字 · 英文按词</div>
+    </div>
+  </section>
+
+  <main class="main">
+    <section class="panel editor" aria-label="文本输入区">
+      <div class="editor-head">
+        <span class="panel-title">文本输入</span>
+        <span class="editor-meta" id="editorMeta">0 行 · 0 字符</span>
+      </div>
+      <textarea id="input" spellcheck="false" autocomplete="off" placeholder="在此输入或粘贴需要统计的文本……&#10;支持中文、英文、标点与表情，所有统计均在本地完成。" aria-label="待统计文本"></textarea>
+      <div class="toolbar">
+        <button type="button" class="btn primary" id="btnCount">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>确定
+        </button>
+        <button type="button" class="btn" id="btnSelect">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V5a1 1 0 0 1 1-1h2"/><path d="M17 4h2a1 1 0 0 1 1 1v2"/><path d="M20 17v2a1 1 0 0 1-1 1h-2"/><path d="M7 20H5a1 1 0 0 1-1-1v-2"/><rect x="8" y="8" width="8" height="8" rx="1.5"/></svg>全选
+        </button>
+        <button type="button" class="btn danger" id="btnDelete">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>删除
+        </button>
+        <button type="button" class="btn ghost" id="btnCopy">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>复制
+        </button>
+        <span class="hint"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> 快速统计</span>
+      </div>
+    </section>
+
+    <aside class="side">
+      <section class="panel" aria-label="字数进度">
+        <div class="limit-head">
+          <span class="panel-title">字数进度</span>
+          <label class="target" for="limit">目标 <input id="limit" type="number" min="0" step="100" inputmode="numeric" placeholder="不限" /></label>
+        </div>
+        <div class="bar" id="limitBar"><i id="limitFill"></i></div>
+        <div class="limit-meta">
+          <span id="limitHint">设置目标字数，实时查看完成度</span>
+          <b id="limitPct">—</b>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="字符构成">
+        <div class="panel-head"><span class="panel-title">字符构成</span></div>
+        <div class="donut-wrap">
+          <div class="donut" id="donut">
+            <div class="donut-hole"><b id="donutTotal">0</b><small>字符</small></div>
+          </div>
+          <div class="legend">
+            <div class="row"><i style="background:#3b82f6" aria-hidden="true"></i>中文<b id="lgCn">0</b></div>
+            <div class="row"><i style="background:#10b981" aria-hidden="true"></i>英文<b id="lgEn">0</b></div>
+            <div class="row"><i style="background:#8b5cf6" aria-hidden="true"></i>数字<b id="lgDigits">0</b></div>
+            <div class="row"><i style="background:#f59e0b" aria-hidden="true"></i>符号<b id="lgSym">0</b></div>
+            <div class="row"><i style="background:#94a3b8" aria-hidden="true"></i>空白<b id="lgSpaces">0</b></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="分类明细">
+        <div class="panel-head"><span class="panel-title">分类明细</span></div>
+        <div class="mini-grid">
+          <div class="mini"><span>英文字母</span><b id="dLetters">0</b></div>
+          <div class="mini"><span>英文单词</span><b id="dWords">0</b></div>
+          <div class="mini"><span>数字</span><b id="dDigits">0</b></div>
+          <div class="mini"><span>中文标点</span><b id="dCnPunct">0</b></div>
+          <div class="mini"><span>西文标点</span><b id="dWestPunct">0</b></div>
+          <div class="mini"><span>其他符号</span><b id="dOther">0</b></div>
+          <div class="mini"><span>空白字符</span><b id="dSpaces">0</b></div>
+          <div class="mini"><span>行数</span><b id="dLines">0</b></div>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="foot">
+    纯本地运行，文本不会上传 · 支持 <kbd>Ctrl</kbd> + <kbd>A</kbd> 全选、<kbd>Ctrl</kbd> + <kbd>Enter</kbd> 统计 · 单文件工具，无需安装
+  </footer>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ===== 统计核心（纯函数，供测试提取） ===== */
+function isSpace(cp) {
+  return cp === 32 || cp === 9 || cp === 10 || cp === 13 || cp === 11 || cp === 12 ||
+    cp === 0xA0 || cp === 0x3000 || cp === 0xFEFF ||
+    (cp >= 0x2000 && cp <= 0x200A) || cp === 0x2028 || cp === 0x2029 ||
+    cp === 0x202F || cp === 0x205F;
+}
+
+function isLatin(cp) {
+  return (cp >= 65 && cp <= 90) || (cp >= 97 && cp <= 122) ||
+    (cp >= 0xFF21 && cp <= 0xFF3A) || (cp >= 0xFF41 && cp <= 0xFF5A);
+}
+
+function isDigit(cp) {
+  return (cp >= 0x30 && cp <= 0x39) || (cp >= 0xFF10 && cp <= 0xFF19);
+}
+
+function isCjk(cp) {
+  return (cp >= 0x4E00 && cp <= 0x9FFF) ||
+    (cp >= 0x3400 && cp <= 0x4DBF) ||
+    (cp >= 0xF900 && cp <= 0xFAFF) ||
+    (cp >= 0x20000 && cp <= 0x2FA1F) ||
+    (cp >= 0x30000 && cp <= 0x323AF) ||
+    cp === 0x3007;
+}
+
+function isCnPunct(cp) {
+  return cp === 0x2018 || cp === 0x2019 || cp === 0x201C || cp === 0x201D ||
+    cp === 0x2014 || cp === 0x2026 ||
+    (cp >= 0x3000 && cp <= 0x303F) ||
+    (cp >= 0xFE10 && cp <= 0xFE1F) ||
+    (cp >= 0xFE30 && cp <= 0xFE4F) ||
+    (cp >= 0xFF01 && cp <= 0xFF0F) ||
+    (cp >= 0xFF1A && cp <= 0xFF20) ||
+    (cp >= 0xFF3B && cp <= 0xFF40) ||
+    (cp >= 0xFF5B && cp <= 0xFF65);
+}
+
+function isWestPunct(cp) {
+  return (cp >= 0x21 && cp <= 0x2F) ||
+    (cp >= 0x3A && cp <= 0x40) ||
+    (cp >= 0x5B && cp <= 0x60) ||
+    (cp >= 0x7B && cp <= 0x7E) ||
+    (cp >= 0x2000 && cp <= 0x206F) ||
+    (cp >= 0x2E00 && cp <= 0x2E7F);
+}
+
+function analyze(text) {
+  let cn = 0, cnPunct = 0, enLetters = 0, enWords = 0;
+  let digits = 0, digitRuns = 0, spaces = 0, westPunct = 0, other = 0;
+  let total = 0, lines = 0;
+  let inWord = false, inNumber = false;
+  const len = text.length;
+
+  for (let i = 0; i < len; i++) {
+    let cp = text.charCodeAt(i);
+    if (cp >= 0xD800 && cp <= 0xDBFF && i + 1 < len) {
+      const lo = text.charCodeAt(i + 1);
+      if (lo >= 0xDC00 && lo <= 0xDFFF) {
+        cp = 0x10000 + ((cp - 0xD800) << 10) + (lo - 0xDC00);
+        i++;
+      }
+    }
+    total++;
+
+    if (isCjk(cp)) {
+      cn++;
+      inWord = false;
+      inNumber = false;
+    } else if (isDigit(cp)) {
+      digits++;
+      if (!inNumber) { digitRuns++; inNumber = true; }
+      inWord = false;
+    } else if (isLatin(cp)) {
+      enLetters++;
+      if (!inWord) { enWords++; inWord = true; }
+      inNumber = false;
+    } else if (isSpace(cp)) {
+      spaces++;
+      if (cp === 10) lines++;
+      inWord = false;
+      inNumber = false;
+    } else {
+      if (isCnPunct(cp)) cnPunct++;
+      else if (isWestPunct(cp)) westPunct++;
+      else other++;
+
+      const next = i + 1 < len ? text.charCodeAt(i + 1) : 0;
+
+      // 小数点不打断数字串，如 3.14
+      if ((cp === 0x2E || cp === 0xFF0E) && inNumber && isDigit(next)) {
+        // 保持 inNumber
+      } else {
+        inNumber = false;
+      }
+
+      // 英文单词内部的连字符或撇号不打断单词，如 state-of-the-art、don't
+      const joiner = cp === 0x27 || cp === 0x2019 || cp === 0x2D || cp === 0x2010 || cp === 0x2011;
+      if (!(joiner && inWord && isLatin(next))) inWord = false;
+    }
+  }
+
+  if (len > 0) lines++;
+
+  const sym = cnPunct + westPunct + other;
+  return {
+    cn, cnPunct, enLetters, enWords, digits, digitRuns,
+    spaces, westPunct, other, sym, total, lines,
+    count: cn + enWords + digitRuns
+  };
+}
+/* ===== 统计核心结束 ===== */
+
+/* ===== 界面交互 ===== */
+(function () {
+  'use strict';
+
+  const $ = function (id) { return document.getElementById(id); };
+  const input = $('input');
+  const el = {
+    cn: $('cn'), sym: $('sym'), chars: $('chars'), count: $('count'),
+    charsSub: $('charsSub'), editorMeta: $('editorMeta'),
+    dLetters: $('dLetters'), dWords: $('dWords'), dDigits: $('dDigits'),
+    dCnPunct: $('dCnPunct'), dWestPunct: $('dWestPunct'), dOther: $('dOther'),
+    dSpaces: $('dSpaces'), dLines: $('dLines'),
+    donut: $('donut'), donutTotal: $('donutTotal'),
+    lgCn: $('lgCn'), lgEn: $('lgEn'), lgDigits: $('lgDigits'),
+    lgSym: $('lgSym'), lgSpaces: $('lgSpaces'),
+    limit: $('limit'), limitBar: $('limitBar'), limitFill: $('limitFill'),
+    limitHint: $('limitHint'), limitPct: $('limitPct'),
+    toast: $('toast')
+  };
+
+  const nf = new Intl.NumberFormat('zh-CN');
+  const fmt = function (n) { return nf.format(n); };
+
+  let last = null;
+  let timer = 0;
+  let toastTimer = 0;
+
+  function setText(node, value) {
+    const s = typeof value === 'number' ? fmt(value) : value;
+    if (node.textContent !== s) node.textContent = s;
+  }
+
+  function render(r) {
+    last = r;
+
+    setText(el.cn, r.cn);
+    setText(el.sym, r.sym);
+    setText(el.chars, r.total);
+    setText(el.count, r.count);
+    setText(el.charsSub, '不含空白 ' + fmt(r.total - r.spaces) + ' 字符');
+    setText(el.editorMeta, fmt(r.lines) + ' 行 · ' + fmt(r.total) + ' 字符');
+
+    setText(el.dLetters, r.enLetters);
+    setText(el.dWords, r.enWords);
+    setText(el.dDigits, r.digits);
+    setText(el.dCnPunct, r.cnPunct);
+    setText(el.dWestPunct, r.westPunct);
+    setText(el.dOther, r.other);
+    setText(el.dSpaces, r.spaces);
+    setText(el.dLines, r.lines);
+
+    setText(el.donutTotal, r.total);
+    setText(el.lgCn, r.cn);
+    setText(el.lgEn, r.enLetters);
+    setText(el.lgDigits, r.digits);
+    setText(el.lgSym, r.sym);
+    setText(el.lgSpaces, r.spaces);
+
+    const total = r.total;
+    if (total > 0) {
+      const segs = [
+        [r.cn, '#3b82f6'],
+        [r.enLetters, '#10b981'],
+        [r.digits, '#8b5cf6'],
+        [r.sym, '#f59e0b'],
+        [r.spaces, '#94a3b8']
+      ];
+      let acc = 0;
+      const stops = [];
+      for (let i = 0; i < segs.length; i++) {
+        const value = segs[i][0];
+        if (!value) continue;
+        const from = (acc / total) * 100;
+        acc += value;
+        const to = (acc / total) * 100;
+        stops.push(segs[i][1] + ' ' + from.toFixed(3) + '% ' + to.toFixed(3) + '%');
+      }
+      el.donut.style.background = 'conic-gradient(' + stops.join(',') + ')';
+    } else {
+      el.donut.style.background = '';
+    }
+
+    updateLimit(r);
+  }
+
+  function updateLimit(r) {
+    const limit = Math.max(0, Number(el.limit.value) || 0);
+    el.limitBar.classList.remove('warn', 'over');
+
+    if (!limit) {
+      el.limitFill.style.width = '0%';
+      setText(el.limitPct, '—');
+      setText(el.limitHint, '设置目标字数，实时查看完成度');
+      return;
+    }
+
+    const pct = (r.count / limit) * 100;
+    el.limitFill.style.width = Math.min(100, pct) + '%';
+    setText(el.limitPct, pct.toFixed(1) + '%');
+
+    if (r.count > limit) {
+      el.limitBar.classList.add('over');
+      setText(el.limitHint, '已超出 ' + fmt(r.count - limit) + ' 字');
+    } else {
+      if (pct >= 85) el.limitBar.classList.add('warn');
+      setText(el.limitHint, '还可写 ' + fmt(limit - r.count) + ' 字');
+    }
+  }
+
+  function compute(showToast) {
+    const text = input.value;
+    const r = analyze(text);
+    render(r);
+
+    if (showToast) {
+      if (!text.trim()) {
+        toast('请先输入需要统计的文本');
+      } else {
+        toast('统计完成：中文 ' + fmt(r.cn) + ' 字 · 符号 ' + fmt(r.sym) +
+          ' 个 · 计字 ' + fmt(r.count));
+      }
+    }
+  }
+
+  function schedule() {
+    clearTimeout(timer);
+    timer = window.setTimeout(function () { compute(false); }, 140);
+  }
+
+  function toast(message, actionLabel, action) {
+    const box = el.toast;
+    box.textContent = '';
+
+    const text = document.createElement('span');
+    text.textContent = message;
+    box.appendChild(text);
+
+    if (actionLabel && action) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = actionLabel;
+      btn.addEventListener('click', function () {
+        action();
+        hideToast();
+      }, { once: true });
+      box.appendChild(btn);
+    }
+
+    box.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(hideToast, actionLabel ? 6000 : 2400);
+  }
+
+  function hideToast() {
+    el.toast.classList.remove('show');
+  }
+
+  input.addEventListener('input', schedule);
+
+  $('btnCount').addEventListener('click', function () {
+    compute(true);
+  });
+
+  $('btnSelect').addEventListener('click', function () {
+    if (!input.value) {
+      toast('还没有内容可全选');
+      input.focus();
+      return;
+    }
+    input.focus();
+    input.select();
+    toast('已全选当前文本');
+  });
+
+  $('btnDelete').addEventListener('click', function () {
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+
+    if (end > start) {
+      input.setRangeText('', start, end, 'end');
+      input.focus();
+      compute(false);
+      toast('已删除选中内容');
+      return;
+    }
+
+    if (!input.value) {
+      toast('没有可删除的内容');
+      return;
+    }
+
+    const backup = input.value;
+    input.value = '';
+    input.focus();
+    compute(false);
+    toast('已清空文本', '撤销', function () {
+      input.value = backup;
+      input.focus();
+      input.setSelectionRange(backup.length, backup.length);
+      compute(false);
+    });
+  });
+
+  $('btnCopy').addEventListener('click', async function () {
+    const text = input.value;
+    if (!text) {
+      toast('没有可复制的文本');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(text);
+      toast('已复制全文');
+    } catch (err) {
+      input.focus();
+      input.select();
+      let ok = false;
+      try {
+        ok = document.execCommand('copy');
+      } catch (e) {
+        ok = false;
+      }
+      toast(ok ? '已复制全文' : '复制失败，请手动复制');
+    }
+  });
+
+  el.limit.addEventListener('input', function () {
+    const v = Number(el.limit.value);
+    if (v < 0) el.limit.value = '0';
+    if (last) updateLimit(last);
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      compute(true);
+    }
+  });
+
+  compute(false);
+})();
+</script>
+</body>
+</html>
